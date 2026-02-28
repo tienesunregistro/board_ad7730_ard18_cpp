@@ -56,6 +56,7 @@ private:
     int do_cmd_wi(int n_params, char params[][LONG_MAX_PARAMETRO]);
     int do_cmd_wp(int n_params, char params[][LONG_MAX_PARAMETRO]);
     int do_cmd_error(const char *msg);
+    int do_cmd_wr();
 
     // --- Funciones de Cálculo (fieles al original) ---
     void RecalcularCoeficientes();

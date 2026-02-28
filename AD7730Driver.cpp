@@ -101,6 +101,7 @@ void AD7730Driver::_sendByte(uint8_t toSend)
 
 void AD7730Driver::_sendBytes(const uint8_t *data, uint8_t len)
 {
+    noInterrupts();
     SPI.beginTransaction(_spiSettings);
     digitalWrite(_csPin, LOW);
     for (uint8_t i = 0; i < len; i++)
@@ -109,6 +110,7 @@ void AD7730Driver::_sendBytes(const uint8_t *data, uint8_t len)
     }
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
+    interrupts();
 }
 
 bool AD7730Driver::_waitForReady()
@@ -128,6 +130,7 @@ long AD7730Driver::_readConversionData()
             return _ultimoValorValido;
     }
 
+    noInterrupts();
     _sendByte(CR_SINGLE_READ | CR_DATA_REGISTER);
 
     SPI.beginTransaction(_spiSettings);
@@ -137,6 +140,7 @@ long AD7730Driver::_readConversionData()
     uint8_t b3 = SPI.transfer(0);
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
+    interrupts();
 
     int32_t lDat = ((long)b1 << 16) | ((long)b2 << 8) | b3;
     lDat >>= AD7730_SHIFT_BITS;
@@ -200,11 +204,13 @@ void AD7730Driver::handleInterrupt()
 
 void AD7730Driver::_sendByteISR(uint8_t toSend)
 {
+    noInterrupts();
     SPI.beginTransaction(_spiSettings);
     digitalWrite(_csPin, LOW);
     SPI.transfer(toSend);
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
+    interrupts();
 }
 
 long AD7730Driver::_readConversionDataISR()
@@ -213,7 +219,8 @@ long AD7730Driver::_readConversionDataISR()
     {
         return _ultimoValorValido;
     }
-
+ 
+    noInterrupts();
     // Seleccionar lectura del registro de datos
     _sendByteISR(CR_SINGLE_READ | CR_DATA_REGISTER);
 
@@ -225,7 +232,7 @@ long AD7730Driver::_readConversionDataISR()
     uint8_t b3 = SPI.transfer(0);
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
-
+    interrupts();
     int32_t lDat = ((long)b1 << 16) | ((long)b2 << 8) | b3;
     lDat >>= AD7730_SHIFT_BITS;
 

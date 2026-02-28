@@ -34,7 +34,8 @@ ComandoController comandoController(&vg, &vgEEprom, &celulaController, &ls7366, 
 static unsigned long isr_secuencia = 0;
 
 // --- Rutina de Servicio de Interrupción (ISR) ---
-// Lee el ADC directamente y almacena en el buffer (idéntico al original ISR_RDY_ADC7730)
+// Lee el ADC directamente y almacena en el buffer circular. 
+// Se ejecuta cada vez que el ADC indica que hay un nuevo dato listo.
 void ISR_ADC_RDY()
 {
     digitalWrite(PIN_TEST_DEBUG, HIGH);

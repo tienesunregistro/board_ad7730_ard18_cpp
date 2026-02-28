@@ -80,16 +80,19 @@ long LS7366Driver::leer() {
 }
 
 void LS7366Driver::_writeReg(byte reg, byte value) {
+    noInterrupts();
     SPI.beginTransaction(_spiSettings);
     digitalWrite(_csPin, LOW);
     SPI.transfer(reg);
     SPI.transfer(value);
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
+    interrupts();
 }
 
 long LS7366Driver::_readReg(byte reg) {
     long data = 0;
+    noInterrupts();
     SPI.beginTransaction(_spiSettings);
     digitalWrite(_csPin, LOW);
     SPI.transfer(reg);
@@ -99,5 +102,6 @@ long LS7366Driver::_readReg(byte reg) {
     data |= (long)SPI.transfer(0);
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
+    interrupts();
     return data;
 }

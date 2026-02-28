@@ -1,6 +1,7 @@
 #include "ComandoController.h"
 #include "AD7730Driver.h"
 #include "Arduino.h"
+#include <avr/wdt.h>
 #include <SoftwareSerial.h>
 
 extern SoftwareSerial SerialAux;
@@ -155,6 +156,9 @@ void ComandoController::procesar(const char *comando)
             break;
         case 'Y':
             do_cmd_wy();
+            break;
+        case 'R':
+            do_cmd_wr();
             break;
         case 'Z':
             do_cmd_wz();
@@ -502,6 +506,26 @@ int ComandoController::do_cmd_wy()
     _celulaController->getAD7730()->configurado = true;
     _celulaController->fuerzaCero();
     return 1;
+}
+
+int ComandoController::do_cmd_wr()
+{
+    Serial.print(F("SYSTEM|RESETTING"));
+    Serial.write(CR);
+    
+    // Esperar a que se envíe el mensaje por el buffer serie
+    Serial.flush(); 
+    delay(100); 
+
+    // Activamos el perro guardián (Watchdog) para que muera en 15ms
+    wdt_enable(WDTO_15MS);
+    
+    // Entramos en un bucle infinito esperando a que el Watchdog resetee la CPU
+    while (1) {
+        // No hacemos nada, el hardware se reiniciará solo
+    }
+    
+    return 1; // Nunca llegará aquí
 }
 
 // Escritura I/O
