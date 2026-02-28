@@ -164,10 +164,111 @@ void loop()
     }
 }
 
-// ============================================================================
-//  Manejo de Comunicación RS232
-// ============================================================================
+/**
+ * Procesa y filtra comandos recibidos por RS232.
+ * 
+ * PROTOCOLO DE COMUNICACIÓN:
+ * --------------------------
+ * Formato: :[ID]|[COMANDO][CR]
+ * 
+ * Componentes:
+ *  1. Inicio (':')      : Carácter obligatorio para sincronizar y limpiar el buffer.
+ *  2. ID                : Número de estación (0 a 32767). 
+ *                         - ID '0' o vacío: Comando GLOBAL (Broadcast).
+ *                         - ID 'n': Solo procesa si coincide con vgEEprom.idEstacion.
+ *  3. Separador ('|')   : Obligatorio. Divide la dirección de la instrucción.
+ *  4. Comando           : Texto de la instrucción (ej. TARA, LEER, etc.).
+ *  5. Fin (CR / '\r')   : Carácter de fin de trama (ASCII 13). Dispara el proceso.
+ * 
+ * REGLAS DE FILTRADO:
+ *  - Si no empieza con ':', se acumula en el buffer pero no se garantiza sincronía.
+ *  - Si no contiene '|', el comando es IGNORADO (Protección de red).
+ *  - Si el ID no coincide y no es 0, el comando es DESCARTADO.
+ *  - Caracteres especiales (ASCII < 32) son ignorados para evitar ruidos.
+ */
 void check_rs232()
+{
+    static char inputBuffer[LONG_COMANDO];
+    static int bufferIndex = 0;
+
+    while (Serial.available() > 0)
+    {
+        char inChar = (char)Serial.read();
+
+        // 1. Si detecta el carácter de inicio, reinicia el buffer
+        if (inChar == CHAR_INICIO_CMD)
+        {
+            bufferIndex = 0;
+            continue;
+        }
+
+        // 2. REGLA: Solo procesar si llega un CR (Carriage Return)
+        // Eliminamos el chequeo de 'LF' para que sea estrictamente con CR
+        if (inChar == CHAR_FIN_CMD)
+        {
+            if (bufferIndex > 0)
+            {
+                inputBuffer[bufferIndex] = '\0';
+
+                // Buscamos el separador '|'
+                char *separator = strchr(inputBuffer, '|');
+
+                // REGLA: Solo se ejecuta si existe un separador (obligamos a que haya un ID)
+                if (separator != NULL)
+                {
+                    *separator = '\0'; // Dividimos la cadena
+                    
+                    // atoi devuelve 0 si no es un número o si es "0"
+                    int idRecibido = atoi(inputBuffer); 
+                    char *cmdToProcess = separator + 1;
+
+                    // REGLA: El ID debe ser 0 o mayor, y debe coincidir con la estación o ser 0
+                    // Nota: atoi de un ID negativo devolvería < 0, esto lo filtra.
+                    if (idRecibido >= 0) 
+                    {
+                        if (idRecibido == vgEEprom.idEstacion || idRecibido == 0)
+                        {
+                            SerialAux.print(F("CMD>"));
+                            SerialAux.println(cmdToProcess);
+                            comandoController.procesar(cmdToProcess);
+                        }
+                    }
+                }
+                // Si no tiene '|', el comando se ignora silenciosamente
+            }
+            bufferIndex = 0; // Resetear buffer tras recibir CR
+        }
+        // 3. Solo guardar caracteres imprimibles (evita LF, tabs, etc.)
+        else if (inChar >= 32 && bufferIndex < (LONG_COMANDO - 1))
+        {
+            inputBuffer[bufferIndex++] = inChar;
+        }
+    }
+}
+
+/**
+ * Escanea y procesa comandos desde el puerto Serial (RS232).
+ * 
+ * PROTOCOLO SOPORTADO:
+ * --------------------
+ * Formato Direccionado:  :[ID]|[COMANDO][FIN]
+ * Formato Directo:       :[COMANDO][FIN] o [COMANDO][FIN]
+ * 
+ * Componentes:
+ *  1. Inicio (':')      : Opcional, pero recomendado. Limpia el buffer para sincronía.
+ *  2. ID (Opcional)     : Número de estación antes del separador '|'.
+ *                         - Si es '0': Comando GLOBAL (Broadcast).
+ *                         - Si coincide con idEstacion: Comando LOCAL.
+ *                         - Si NO hay '|': Se procesa el comando íntegro (Sin filtro de ID).
+ *  3. Comando           : La instrucción a ejecutar (ej. TARA, STATUS, etc.).
+ *  4. Fin ([FIN])       : Acepta tanto CR (ASCII 13) como LF (ASCII 10).
+ * 
+ * COMPORTAMIENTO:
+ *  - Si el ID no coincide y no es 0, el comando se descarta.
+ *  - Si el comando no contiene el carácter '|', se ejecuta SIEMPRE (Modo Directo).
+ *  - Filtra ruidos ignorando caracteres ASCII menores a 32 (excepto terminadores).
+ */
+void check_rs232_ligero()
 {
     static char inputBuffer[LONG_COMANDO];
     static int bufferIndex = 0;
