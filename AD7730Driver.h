@@ -56,6 +56,7 @@
 #define CURRENT_MODE_0_SETTINGS (MR0_HIREF_5V | MR0_RANGE_10MV | MR0_CHANNEL_1)
 
 // ---- Filter Register (data rates con CHOP OFF) ----
+#define FR2_DATA_RATE_50 0x30
 #define FR2_DATA_RATE_150 0x80
 #define FR2_DATA_RATE_300 0x40
 #define FR2_DATA_RATE_400 0x30

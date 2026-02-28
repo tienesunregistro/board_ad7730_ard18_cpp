@@ -9,6 +9,7 @@
 
 typedef enum DATA_RATE
 {
+    DATA_RATE_50 = 50,
     DATA_RATE_150 = 150,
     DATA_RATE_300 = 300,
     DATA_RATE_600 = 600,

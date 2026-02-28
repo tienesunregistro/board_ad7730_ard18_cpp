@@ -106,7 +106,7 @@ def main() -> int:
                     else:
                         print(f"[{ts}] TIMEOUT (sin respuesta)")
 
-                time.sleep(args.interval)
+                #time.sleep(args.interval)
 
             dt = time.time() - t0
             rate = (i / dt) if dt > 0 else 0.0

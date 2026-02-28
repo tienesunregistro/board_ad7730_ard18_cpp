@@ -24,6 +24,9 @@ void AD7730Driver::init(TDataRate dataRate)
     uint8_t fr2_val;
     switch (dataRate)
     {
+    case DATA_RATE_50:
+        fr2_val = FR2_DATA_RATE_50;
+        break;
     case DATA_RATE_150:
         fr2_val = FR2_DATA_RATE_150;
         break;

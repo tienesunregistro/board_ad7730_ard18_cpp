@@ -146,7 +146,9 @@ void loop()
         // Aplicar filtro digital
         if (vgEEprom.filtro_on_off)
         {
-            vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 3 + vg.dac_CH1) / 4;
+            //vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 3 + vg.dac_CH1) / 4;
+            vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 15 + vg.dac_CH1) / 16;
+            //vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 31 + vg.dac_CH1) / 32;
         }
         else
         {
