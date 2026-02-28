@@ -6,7 +6,7 @@
 
 extern SoftwareSerial SerialAux;
 
-// Union para convertir float a bytes (idéntico al original)
+// Union para convertir float a bytes
 union conversor
 {
     float valorf;
@@ -192,16 +192,7 @@ int ComandoController::do_cmd_ri()
 // Lectura de fuerza en N, con compensación de cero
 int ComandoController::do_cmd_r1()
 {
-    float datoF;
-
-    if (_vgEEprom->filtro_on_off)
-    {
-        datoF = LecturaFuerzaFiltrada();
-    }
-    else
-    {
-        datoF = LecturaFuerzaNoFiltrada();
-    }
+    float datoF = (_vgEEprom->filtro_on_off) ? LecturaFuerzaFiltrada() : LecturaFuerzaNoFiltrada();
 
     if (abs(datoF) > 10000)
     {
@@ -677,7 +668,7 @@ int ComandoController::do_cmd_error(const char *msg)
 //  FUNCIONES DE CÁLCULO (fieles al original celulas.ino / extension.ino)
 // ============================================================================
 
-// Coeficientes para el paso de unidades (idéntico al original)
+// Coeficientes para el paso de unidades
 void ComandoController::RecalcularCoeficientes()
 {
     _vg->CCF_N = 1;
@@ -697,7 +688,7 @@ void ComandoController::RecalcularCoeficientes()
     }
 }
 
-// Conversión de pasos a fuerza (idéntico al original)
+// Conversión de pasos a fuerza
 float ComandoController::pasos_a_fuerza(long valor, int unidad)
 {
     double res;
@@ -741,44 +732,27 @@ float ComandoController::pasos_a_fuerza(long valor, int unidad)
     return (float)res;
 }
 
-// Conversión de fuerza a pasos (idéntico al original)
+// Conversión de fuerza a pasos
 long ComandoController::fuerza_a_pasos(float valor, int unidad)
 {
-    long res;
-    float IPF;
-
-    if (valor >= 0)
-    {
-        IPF = _vg->gan_celulaPos;
-    }
-    else
-    {
-        IPF = _vg->gan_celulaNeg;
-    }
+    float res_float; // Usamos float para el cálculo intermedio
+    float IPF = (valor >= 0) ? _vg->gan_celulaPos : _vg->gan_celulaNeg;
 
     switch (unidad)
     {
-    case UF_N:
-        res = (long)(valor / _vg->CCF_N * IPF);
-        break;
-    case UF_KN:
-        res = (long)(valor / _vg->CCF_KN * IPF);
-        break;
-    case UF_K:
-        res = (long)(valor / _vg->CCF_K * IPF);
-        break;
-    case UF_LB:
-        res = (long)(valor / _vg->CCF_LB * IPF);
-        break;
-    default:
-        res = 9999;
-        break;
+        case UF_N:  res_float = (valor / _vg->CCF_N * IPF); break;
+        case UF_KN: res_float = (valor / _vg->CCF_KN * IPF); break;
+        case UF_K:  res_float = (valor / _vg->CCF_K * IPF); break;
+        case UF_LB: res_float = (valor / _vg->CCF_LB * IPF); break;
+        default:    return 9999;
     }
 
-    return res;
+    // round() asegura que 150.6 sea 151 y 150.4 sea 150
+    return (long)round(res_float); 
 }
 
-// Conversión de pasos a deformación (idéntico al original)
+
+// Conversión de pasos a deformación
 float ComandoController::pasos_a_deformacion(long valor, int unidad)
 {
     float res;
