@@ -1,3 +1,24 @@
+/*
+ * =========================================================================================
+ *  Project:        KERNEL - [Controlador de Adquisición para Célula de Carga]
+ *  File:           [board_ad7730_ard18_cpp.ino]
+ *  Copyright:      (c) 2026 IRUNET S.L. - All rights reserved.
+ * 
+ *  License:        PROPRIETARY - CONFIDENTIAL
+ *                  All rights reserved. Unauthorized copying of this file, via any medium 
+ *                  is strictly prohibited. 
+ * 
+ *  Description:    Controlador de adquisición de datos para placa ARD18-V1.
+ *                  Soporte para ADC AD7730 y Encoder LS7366.
+ * 
+ *  Disclaimer:     THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND.
+ *                  IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR 
+ *                  OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, 
+ *                  ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE 
+ *                  OR OTHER DEALINGS IN THE SOFTWARE.
+ * =========================================================================================
+ */
+
 #include <SPI.h>
 #include <SoftwareSerial.h>
 
