@@ -137,7 +137,7 @@ void loop()
         bufferController.read(&datoLeido);
         long dataconvert = datoLeido.dato;
 
-        // Aplicar polaridad de la célula (idéntico al original leer_adlc)
+        // Aplicar polaridad de la célula
         if (vg.pol_celula < 0)
             dataconvert = -dataconvert;
 
@@ -155,7 +155,7 @@ void loop()
             vg.dac_filtrado_CH1 = vg.dac_CH1;
         }
 
-        // Rastrear picos máximos (idéntico al original leer_adlc)
+        // Rastrear picos máximos
         if (vg.dac_CH1 > vg.max_dac_tramo_CH1)
         {
             vg.max_dac_tramo_CH1 = vg.dac_CH1;

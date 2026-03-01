@@ -13,7 +13,7 @@
 #define AD7730_18BIT_RANGE (1L << 18)
 #define AD7730_GLITCH_THRESHOLD 8000
 
-// ---- Valores del Communication Register (idénticos al original driver_ad7730.h) ----
+// ---- Valores del Communication Register ----
 #define CR_SINGLE_WRITE 0x00
 #define CR_SINGLE_READ 0x10
 #define CR_CONTINUOUS_READ_START 0x20
