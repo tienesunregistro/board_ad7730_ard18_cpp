@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# python serial_tests\test_ri_only.py --port COM4 --baud=38400
+# python .\test_rs232_r1_loop.py --port COM5 --baud=38400
 import argparse
 import sys
 import time

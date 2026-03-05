@@ -94,7 +94,7 @@ void setup()
     eepromController.init();
     alarmaController.init();
     celulaController.init();  // Esto ya inicializa el AD7730 con la célula por defecto
-    comandoController.init(); // << NUEVO: Inicializa los coeficientes de cálculo
+    comandoController.init(); // Inicializa los coeficientes de cálculo
     ls7366.init(vgEEprom.count_mode);
     bufferController.init();
 
@@ -146,14 +146,16 @@ void loop()
         // Aplicar filtro digital
         if (vgEEprom.filtro_on_off)
         {
-            //vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 3 + vg.dac_CH1) / 4;
-            vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 15 + vg.dac_CH1) / 16;
+            vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 3 + vg.dac_CH1) / 4;
+            //vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 15 + vg.dac_CH1) / 16;
             //vg.dac_filtrado_CH1 = (vg.dac_filtrado_CH1 * 31 + vg.dac_CH1) / 32;
         }
         else
         {
             vg.dac_filtrado_CH1 = vg.dac_CH1;
         }
+       
+
 
         // Rastrear picos máximos
         if (vg.dac_CH1 > vg.max_dac_tramo_CH1)

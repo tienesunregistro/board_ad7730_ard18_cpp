@@ -8,9 +8,9 @@
 // Constantes específicas del driver que no necesitan ser globales
 #define AD7730_SPI_CLOCK 2000000
 #define AD7730_TIMEOUT 0x4FFFF
-#define AD7730_SHIFT_BITS 6
+#define AD7730_SHIFT_BITS 6U
 #define AD7730_18BIT_MASK (1UL << 17U)
-#define AD7730_18BIT_RANGE (1L << 18)
+#define AD7730_18BIT_RANGE (1L << 18U)
 #define AD7730_GLITCH_THRESHOLD 8000
 
 // ---- Valores del Communication Register ----
@@ -84,8 +84,8 @@ public:
     AD7730Driver(int csPin, int rdyPin, int resetPin);
     void init(TDataRate dataRate);
     void reset();
-    long leerDatoConFiltro();
-    long leerDatoConFiltroISR(); // Versión para llamar desde ISR (sin beginTransaction)
+    //long leerDatoConFiltro();
+    int32_t leerDatoConFiltroISR(); // Versión para llamar desde ISR (sin beginTransaction)
     void setIsrFlag();
     bool getIsrFlag();
     void clearIsrFlag();
@@ -98,15 +98,15 @@ private:
     int _rdyPin;
     int _resetPin;
     SPISettings _spiSettings;
-    volatile long _ultimoValorValido = 0;
+    volatile int32_t _ultimoValorValido = 0;
     volatile bool _isrFlag = false;
 
     void _sendByte(uint8_t toSend);
     void _sendBytes(const uint8_t *data, uint8_t len);
     void _sendByteISR(uint8_t toSend); // SPI directo sin transaction
-    long _readConversionDataISR();     // Lectura SPI directa para ISR
+    int32_t _readConversionDataISR();     // Lectura SPI directa para ISR
     bool _waitForReady();
-    long _readConversionData();
+    //long _readConversionData();
 };
 
 #endif // AD7730DRIVER_H

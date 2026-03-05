@@ -125,63 +125,63 @@ bool AD7730Driver::_waitForReady()
 }
 
 // Lectura de datos
-long AD7730Driver::_readConversionData()
-{
-    if (!configurado)
-    {
-        if (!_waitForReady())
-            return _ultimoValorValido;
-    }
+// long AD7730Driver::_readConversionData()
+// {
+//     if (!configurado)
+//     {
+//         if (!_waitForReady())
+//             return _ultimoValorValido;
+//     }
 
-    noInterrupts();
-    _sendByte(CR_SINGLE_READ | CR_DATA_REGISTER);
+//     noInterrupts();
+//     _sendByte(CR_SINGLE_READ | CR_DATA_REGISTER);
 
-    SPI.beginTransaction(_spiSettings);
-    digitalWrite(_csPin, LOW);
-    uint8_t b1 = SPI.transfer(0);
-    uint8_t b2 = SPI.transfer(0);
-    uint8_t b3 = SPI.transfer(0);
-    digitalWrite(_csPin, HIGH);
-    SPI.endTransaction();
-    interrupts();
+//     SPI.beginTransaction(_spiSettings);
+//     digitalWrite(_csPin, LOW);
+//     uint8_t b1 = SPI.transfer(0);
+//     uint8_t b2 = SPI.transfer(0);
+//     uint8_t b3 = SPI.transfer(0);
+//     digitalWrite(_csPin, HIGH);
+//     SPI.endTransaction();
+//     interrupts();
 
-    int32_t lDat = ((long)b1 << 16) | ((long)b2 << 8) | b3;
-    lDat >>= AD7730_SHIFT_BITS;
+//     int32_t lDat = ((long)b1 << 16) | ((long)b2 << 8) | b3;
+//     lDat >>= AD7730_SHIFT_BITS;
 
-    if (lDat & AD7730_18BIT_MASK)
-    {
-        lDat -= AD7730_18BIT_RANGE;
-    }
-    return lDat;
-}
+//     if (lDat & AD7730_18BIT_MASK)
+//     {
+//         lDat -= AD7730_18BIT_RANGE;
+//     }
+//     return lDat;
+// }
 
-long AD7730Driver::leerDatoConFiltro()
-{
-    long dataconvert = _readConversionData();
-    static int rejectionCounter = 0;
+// long AD7730Driver::leerDatoConFiltro()
+// {
+//     long dataconvert = _readConversionData();
+//     static int rejectionCounter = 0;
 
-    long difference = abs(dataconvert - _ultimoValorValido);
+//     long difference = abs(dataconvert - _ultimoValorValido);
 
-    if (difference > AD7730_GLITCH_THRESHOLD)
-    {
-        rejectionCounter++;
-        if (rejectionCounter > 5)
-        {
-            rejectionCounter = 0;
-            _ultimoValorValido = dataconvert;
-        }
-        else
-        {
-            dataconvert = _ultimoValorValido;
-        }
-    }
-    else
-    {
-        rejectionCounter = 0;
-        _ultimoValorValido = dataconvert;
-    }
-    return dataconvert;
-}
+//     if (difference > AD7730_GLITCH_THRESHOLD)
+//     {
+//         rejectionCounter++;
+//         if (rejectionCounter > 5)
+//         {
+//             rejectionCounter = 0;
+//             _ultimoValorValido = dataconvert;
+//         }
+//         else
+//         {
+//             dataconvert = _ultimoValorValido;
+//         }
+//     }
+//     else
+//     {
+//         rejectionCounter = 0;
+//         _ultimoValorValido = dataconvert;
+//     }
+//     return dataconvert;
+// }
 
 // Manejo de interrupciones
 void AD7730Driver::setIsrFlag()
@@ -216,7 +216,7 @@ void AD7730Driver::_sendByteISR(uint8_t toSend)
     interrupts();
 }
 
-long AD7730Driver::_readConversionDataISR()
+int32_t AD7730Driver::_readConversionDataISR()
 {
     if (!configurado)
     {
@@ -235,41 +235,45 @@ long AD7730Driver::_readConversionDataISR()
     uint8_t b3 = SPI.transfer(0);
     digitalWrite(_csPin, HIGH);
     SPI.endTransaction();
+   
     interrupts();
-    int32_t lDat = ((long)b1 << 16) | ((long)b2 << 8) | b3;
+    int32_t lDat = ((int32_t)b1 << 16U) | ((int32_t)b2 << 8U) | b3;
+    // int32_t lDat = b3 + b2 * 256L + b1 * 256L * 256L;
     lDat >>= AD7730_SHIFT_BITS;
 
     if (lDat & AD7730_18BIT_MASK)
     {
-        lDat -= AD7730_18BIT_RANGE;
+        //lDat -= AD7730_18BIT_RANGE;
+        //lDat = 0x20000 - lDat;
     }
+    lDat = 0x20000 - lDat;
     return lDat;
 }
 
-long AD7730Driver::leerDatoConFiltroISR()
+int32_t AD7730Driver::leerDatoConFiltroISR()
 {
-    long dataconvert = _readConversionDataISR();
-    static int rejectionCounter = 0;
+    int32_t dataconvert = _readConversionDataISR();
+    // static int8_t rejectionCounter = 0;
 
-    long difference = abs(dataconvert - _ultimoValorValido);
+    // int32_t difference = abs(dataconvert - _ultimoValorValido);
 
-    if (difference > AD7730_GLITCH_THRESHOLD)
-    {
-        rejectionCounter++;
-        if (rejectionCounter > 5)
-        {
-            rejectionCounter = 0;
-            _ultimoValorValido = dataconvert;
-        }
-        else
-        {
-            dataconvert = _ultimoValorValido;
-        }
-    }
-    else
-    {
-        rejectionCounter = 0;
-        _ultimoValorValido = dataconvert;
-    }
+    // if (difference > AD7730_GLITCH_THRESHOLD)
+    // {
+    //     rejectionCounter++;
+    //     if (rejectionCounter > 5)
+    //     {
+    //         rejectionCounter = 0;
+    //         _ultimoValorValido = dataconvert;
+    //     }
+    //     else
+    //     {
+    //         dataconvert = _ultimoValorValido;
+    //     }
+    // }
+    // else
+    // {
+    //     rejectionCounter = 0;
+    //     _ultimoValorValido = dataconvert;
+    // }
     return dataconvert;
 }
