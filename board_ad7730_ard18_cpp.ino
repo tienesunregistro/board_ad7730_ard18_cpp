@@ -43,39 +43,63 @@ TVarEEprom vgEEprom;
 SoftwareSerial SerialAux(6, 7); // RX, TX para debug
 
 // --- Instancias de Drivers y Controladores ---
-AD7730Driver ad7730(PIN_CS_AD7730, PIN_RDY_AD730, PIN_RESET_AD730);
-LS7366Driver ls7366(PIN_CS_LS7366);
+
 BufferController bufferController;
+AD7730Driver ad7730(PIN_CS_AD7730, PIN_RDY_AD730, PIN_RESET_AD730, bufferController);
+LS7366Driver ls7366(PIN_CS_LS7366);
 EepromController eepromController(&vgEEprom);
 AlarmaController alarmaController(PIN_ALARMA_FUERZA_POST, PIN_ALARMA_FUERZA_NEG);
 CelulaController celulaController(&vg, &vgEEprom, &ad7730);
 ComandoController comandoController(&vg, &vgEEprom, &celulaController, &ls7366, &eepromController);
 
 // --- Variables para la Interrupción ---
-static unsigned long isr_secuencia = 0;
+//static unsigned long isr_secuencia = 0;
+volatile bool _isrFlag = false;
 
 // --- Rutina de Servicio de Interrupción (ISR) ---
 // Lee el ADC directamente y almacena en el buffer circular. 
 // Se ejecuta cada vez que el ADC indica que hay un nuevo dato listo.
 void ISR_ADC_RDY()
 {
-    digitalWrite(PIN_TEST_DEBUG, HIGH);
 
-    if (!ad7730.configurado)
-    {
-        digitalWrite(PIN_TEST_DEBUG, LOW);
-        return;
-    }
-
-    TDatoCanal datoCanalCelula;
-    datoCanalCelula.dato = ad7730.leerDatoConFiltroISR();
-    datoCanalCelula.t_ms = millis();
-    datoCanalCelula.secuencia = isr_secuencia++;
-
-    bufferController.store(&datoCanalCelula);
-
-    digitalWrite(PIN_TEST_DEBUG, LOW);
+    _isrFlag = true;
 }
+
+
+// void ISR_ADC_RDY()
+// {
+//     digitalWrite(PIN_TEST_DEBUG, HIGH);
+
+//     if (!ad7730.configurado)
+//     {
+//         digitalWrite(PIN_TEST_DEBUG, LOW);
+//         return;
+//     }
+
+//     TDatoCanal datoCanalCelula;
+//     datoCanalCelula.dato = ad7730.leerDatoConFiltroISR();
+//     datoCanalCelula.t_ms = millis();
+//     datoCanalCelula.secuencia = isr_secuencia++;
+
+//     bufferController.store(&datoCanalCelula);
+
+//     digitalWrite(PIN_TEST_DEBUG, LOW);
+// }
+
+// void leedatoISR()
+// {
+//     if (!ad7730.configurado)
+//     {
+//         return;
+//     }
+
+//     TDatoCanal datoCanalCelula;
+//     datoCanalCelula.dato = ad7730.leerDatoConFiltroISR();
+//     datoCanalCelula.t_ms = millis();
+//     datoCanalCelula.secuencia = isr_secuencia++;
+
+//     bufferController.store(&datoCanalCelula);
+// }
 
 // ============================================================================
 //  SETUP
@@ -129,6 +153,11 @@ void setup()
 // ============================================================================
 void loop()
 {
+    if (_isrFlag)
+    {
+        _isrFlag = false;
+        ad7730.leerdato_salvar_en_buffer();
+    }
     // 1. Consumir muestras del ADC desde el buffer circular
     //    (la ISR ya leyó el ADC y almacenó en el buffer)
     if (bufferController.isDataAvailable())

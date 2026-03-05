@@ -78,18 +78,16 @@
 #define DACR_OFFSET_SIGN_NEGATIVE 0x20
 #define DACR_OFFSET_NONE 0x00
 
+#include "BufferController.h"
+
 class AD7730Driver
 {
 public:
-    AD7730Driver(int csPin, int rdyPin, int resetPin);
+    AD7730Driver(int csPin, int rdyPin, int resetPin,  BufferController& buffer);
     void init(TDataRate dataRate);
     void reset();
-    //long leerDatoConFiltro();
-    int32_t leerDatoConFiltroISR(); // Versión para llamar desde ISR (sin beginTransaction)
-    void setIsrFlag();
-    bool getIsrFlag();
-    void clearIsrFlag();
-    void handleInterrupt();
+    int32_t leerDatoConFiltroISR();
+    void leerdato_salvar_en_buffer();
 
     volatile bool configurado = false;
 
@@ -97,16 +95,18 @@ private:
     int _csPin;
     int _rdyPin;
     int _resetPin;
+    BufferController& _buffer;
     SPISettings _spiSettings;
     volatile int32_t _ultimoValorValido = 0;
     volatile bool _isrFlag = false;
+    volatile uint32_t _isr_secuencia = 0;
 
     void _sendByte(uint8_t toSend);
     void _sendBytes(const uint8_t *data, uint8_t len);
     void _sendByteISR(uint8_t toSend); // SPI directo sin transaction
     int32_t _readConversionDataISR();     // Lectura SPI directa para ISR
     bool _waitForReady();
-    //long _readConversionData();
+    
 };
 
 #endif // AD7730DRIVER_H

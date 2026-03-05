@@ -1,9 +1,11 @@
 #include "AD7730Driver.h"
-
+#include "BufferController.h"
+//#include "TDatoCanal.h"
 // Constructor
-AD7730Driver::AD7730Driver(int csPin, int rdyPin, int resetPin) : _csPin(csPin),
+AD7730Driver::AD7730Driver(int csPin, int rdyPin, int resetPin,  BufferController& buffer) : _csPin(csPin),
                                                                   _rdyPin(rdyPin),
                                                                   _resetPin(resetPin),
+                                                                  _buffer(buffer),
                                                                   _spiSettings(AD7730_SPI_CLOCK, MSBFIRST, SPI_MODE1)
 {
 }
@@ -124,85 +126,6 @@ bool AD7730Driver::_waitForReady()
     return (timeout > 0);
 }
 
-// Lectura de datos
-// long AD7730Driver::_readConversionData()
-// {
-//     if (!configurado)
-//     {
-//         if (!_waitForReady())
-//             return _ultimoValorValido;
-//     }
-
-//     noInterrupts();
-//     _sendByte(CR_SINGLE_READ | CR_DATA_REGISTER);
-
-//     SPI.beginTransaction(_spiSettings);
-//     digitalWrite(_csPin, LOW);
-//     uint8_t b1 = SPI.transfer(0);
-//     uint8_t b2 = SPI.transfer(0);
-//     uint8_t b3 = SPI.transfer(0);
-//     digitalWrite(_csPin, HIGH);
-//     SPI.endTransaction();
-//     interrupts();
-
-//     int32_t lDat = ((long)b1 << 16) | ((long)b2 << 8) | b3;
-//     lDat >>= AD7730_SHIFT_BITS;
-
-//     if (lDat & AD7730_18BIT_MASK)
-//     {
-//         lDat -= AD7730_18BIT_RANGE;
-//     }
-//     return lDat;
-// }
-
-// long AD7730Driver::leerDatoConFiltro()
-// {
-//     long dataconvert = _readConversionData();
-//     static int rejectionCounter = 0;
-
-//     long difference = abs(dataconvert - _ultimoValorValido);
-
-//     if (difference > AD7730_GLITCH_THRESHOLD)
-//     {
-//         rejectionCounter++;
-//         if (rejectionCounter > 5)
-//         {
-//             rejectionCounter = 0;
-//             _ultimoValorValido = dataconvert;
-//         }
-//         else
-//         {
-//             dataconvert = _ultimoValorValido;
-//         }
-//     }
-//     else
-//     {
-//         rejectionCounter = 0;
-//         _ultimoValorValido = dataconvert;
-//     }
-//     return dataconvert;
-// }
-
-// Manejo de interrupciones
-void AD7730Driver::setIsrFlag()
-{
-    _isrFlag = true;
-}
-
-bool AD7730Driver::getIsrFlag()
-{
-    return _isrFlag;
-}
-
-void AD7730Driver::clearIsrFlag()
-{
-    _isrFlag = false;
-}
-
-void AD7730Driver::handleInterrupt()
-{
-}
-
 // --- Métodos ISR (con SPI.beginTransaction como el original) ---
 
 void AD7730Driver::_sendByteISR(uint8_t toSend)
@@ -238,42 +161,52 @@ int32_t AD7730Driver::_readConversionDataISR()
    
     interrupts();
     int32_t lDat = ((int32_t)b1 << 16U) | ((int32_t)b2 << 8U) | b3;
-    // int32_t lDat = b3 + b2 * 256L + b1 * 256L * 256L;
+    
     lDat >>= AD7730_SHIFT_BITS;
 
-    if (lDat & AD7730_18BIT_MASK)
-    {
-        //lDat -= AD7730_18BIT_RANGE;
-        //lDat = 0x20000 - lDat;
-    }
-    lDat = 0x20000 - lDat;
+    lDat -= 0x20000; 
     return lDat;
 }
 
 int32_t AD7730Driver::leerDatoConFiltroISR()
 {
     int32_t dataconvert = _readConversionDataISR();
-    // static int8_t rejectionCounter = 0;
+    static int8_t rejectionCounter = 0;
 
-    // int32_t difference = abs(dataconvert - _ultimoValorValido);
+    int32_t difference = abs(dataconvert - _ultimoValorValido);
 
-    // if (difference > AD7730_GLITCH_THRESHOLD)
-    // {
-    //     rejectionCounter++;
-    //     if (rejectionCounter > 5)
-    //     {
-    //         rejectionCounter = 0;
-    //         _ultimoValorValido = dataconvert;
-    //     }
-    //     else
-    //     {
-    //         dataconvert = _ultimoValorValido;
-    //     }
-    // }
-    // else
-    // {
-    //     rejectionCounter = 0;
-    //     _ultimoValorValido = dataconvert;
-    // }
+    if (difference > AD7730_GLITCH_THRESHOLD)
+    {
+        rejectionCounter++;
+        if (rejectionCounter > 5)
+        {
+            rejectionCounter = 0;
+            _ultimoValorValido = dataconvert;
+        }
+        else
+        {
+            dataconvert = _ultimoValorValido;
+        }
+    }
+    else
+    {
+        rejectionCounter = 0;
+        _ultimoValorValido = dataconvert;
+    }
     return dataconvert;
+}
+
+void AD7730Driver::leerdato_salvar_en_buffer()
+{
+    if (!configurado)
+    {
+        return;
+    }
+
+    TDatoCanal datoCanalCelula;
+    datoCanalCelula.dato = leerDatoConFiltroISR();
+    datoCanalCelula.t_ms = millis();
+    datoCanalCelula.secuencia = _isr_secuencia++;
+
+    _buffer.store(&datoCanalCelula);
 }
